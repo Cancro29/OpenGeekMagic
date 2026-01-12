@@ -7,6 +7,7 @@ A Weather Dashboard project based on GeekMagic SmallTV running on ESP8266
 - Dashboard Manager
 - Uses Tailwind CSS. Any changes related to Dashboard HTML must be recompiled using Tailwind
 - Custom image viewer
+- OTA Update
 
 ## How to use:
 - Go to toolkit folder, extract TFT_eSPI.rar into your Arduino library folder. Skip if you have figured the LCD pins.
