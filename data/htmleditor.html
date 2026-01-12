@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Simple Text Editor with Preview</title>
+    <style>
+        /* * The @font-face rule was removed because it requires an external font file, 
+         * which would violate the single-file requirement. The fallback font will be used.
+         */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling on the body */
+        }
+        body {
+            overscroll-behavior-y: contain;
+            background: #1a1a1a;
+            color: #bfbfbf;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            font-size: 0.9em;
+            display: flex;
+            flex-direction: column;
+        }
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            width: 100%;
+            box-sizing: border-box;
+            height: 100%;
+        }
+        button {
+            display: inline-block;
+            height: 38px;
+            padding: 0 15px;
+            color: #fff;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 38px;
+            letter-spacing: .05rem;
+            text-transform: uppercase;
+            text-decoration: none;
+            white-space: nowrap;
+            background: #2f3136;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            box-sizing: border-box;
+            margin: 0 5px;
+        }
+        button:hover {
+            background: #42444a;
+        }
+        .controls {
+            padding-bottom: 15px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .editor-container {
+            display: flex;
+            /* Default to column for portrait mode */
+            flex-direction: column;
+            flex-grow: 1; /* This will make the container take up the remaining space */
+            gap: 15px; /* Adds space between editor and preview */
+            min-height: 0; /* Important for flexbox children to shrink properly */
+        }
+        .editor-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .search-bar {
+            display: flex;
+            margin-bottom: 5px;
+            gap: 5px;
+        }
+        #searchInput {
+            flex-grow: 1;
+            background-color: #2c2c2c;
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            color: #bfbfbf;
+            padding: 0 10px;
+            font-size: 14px;
+        }
+        #searchButton {
+            height: 32px;
+            line-height: 32px;
+            padding: 0 10px;
+            font-size: 9px;
+        }
+        #editor {
+            width: 100%;
+            flex-grow: 1;
+            background-color: #2c2c2c;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            color: #bfbfbf;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 14px;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: none;
+        }
+        #preview-frame {
+            width: 100%;
+            flex: 1; /* Each pane takes up half the space */
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            background-color: #fff; /* White background for the preview */
+        }
+
+        /* --- Responsive Layout for Landscape Mode --- */
+        @media (orientation: landscape) {
+            .content {
+                max-width: 100%; /* Override max-width to use full screen width */
+                padding: 10px; /* Optional: adjust padding for landscape */
+            }
+            .editor-container {
+                /* Switch to row for side-by-side layout */
+                flex-direction: row;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="content">
+        <!-- Control buttons for file operations -->
+        <div class="controls">
+            <button id="openButton">Open</button>
+            <button id="saveButton">Save</button>
+        </div>
+
+        <!-- Container for the editor and preview panes -->
+        <div class="editor-container">
+            <!-- Wrapper for editor and its search bar -->
+            <div class="editor-wrapper">
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="Find text...">
+                    <button id="searchButton">Find</button>
+                </div>
+                <textarea id="editor" placeholder="Type your HTML here..."></textarea>
+            </div>
+            <!-- The real-time preview window -->
+            <iframe id="preview-frame"></iframe>
+        </div>
+
+        <!-- Hidden file input to be triggered by the 'Open' button -->
+        <input type="file" id="fileInput" accept=".html,.txt,.css,.js" style="display: none;">
+    </div>
+
+    <script>
+        // Get references to the DOM elements
+        const openButton = document.getElementById('openButton');
+        const saveButton = document.getElementById('saveButton');
+        const fileInput = document.getElementById('fileInput');
+        const editor = document.getElementById('editor');
+        const previewFrame = document.getElementById('preview-frame');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+
+        let debounceTimeout;
+        let lastSearchIndex = 0;
+        let lastSearchQuery = '';
+
+        // --- Function to update the preview pane ---
+        function updatePreview() {
+            const previewDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+            previewDoc.open();
+            previewDoc.write(editor.value);
+            previewDoc.close();
+        }
+
+        // --- Event Listener for the editor ---
+        // Updates the preview in real-time whenever the user types, with a 2-second debounce.
+        editor.addEventListener('input', () => {
+            // Clear the previous timeout to reset the timer
+            clearTimeout(debounceTimeout);
+            // Set a new timeout to call updatePreview after 2 seconds
+            debounceTimeout = setTimeout(updatePreview, 2000);
+        });
+
+        // --- Event Listener for the 'Open' button ---
+        openButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // --- Event Listener for the 'Save' button ---
+        saveButton.addEventListener('click', () => {
+            showToast('Save functionality is not implemented.');
+        });
+        
+        // --- Event Listener for the Search button ---
+        searchButton.addEventListener('click', () => {
+            const query = searchInput.value;
+            if (!query) {
+                showToast('Please enter text to search.');
+                return;
+            }
+
+            // If it's a new search query, reset the index from the start
+            if (query !== lastSearchQuery) {
+                lastSearchQuery = query;
+                lastSearchIndex = 0;
+            }
+
+            const text = editor.value;
+            let index = text.toLowerCase().indexOf(query.toLowerCase(), lastSearchIndex);
+
+            // If no match is found from the current position, wrap around and search from the top
+            if (index === -1) {
+                lastSearchIndex = 0; // Reset index
+                index = text.toLowerCase().indexOf(query.toLowerCase(), lastSearchIndex);
+                
+                // If it's still not found, then the text doesn't exist in the editor
+                if (index === -1) {
+                    showToast(`'${query}' not found.`);
+                    return; // Exit the function
+                }
+                showToast('Reached end of file. Searching from top.');
+            }
+
+            // A match was found, so we proceed to highlight and scroll
+            
+            // Select the found text
+            editor.focus();
+            editor.setSelectionRange(index, index + query.length);
+
+            // --- Auto-scroll to the selected text ---
+            const textBefore = editor.value.substring(0, index);
+            const lineCount = (textBefore.match(/\n/g) || []).length;
+            const computedStyle = window.getComputedStyle(editor);
+            // Use parseFloat for more accuracy with potential fractional line-heights
+            const lineHeight = parseFloat(computedStyle.lineHeight);
+            // Scroll to the approximate line, leaving a couple of lines for context
+            editor.scrollTop = Math.max(0, (lineCount * lineHeight) - (lineHeight * 2));
+
+            // Update the search index to start after the found text for the next search
+            lastSearchIndex = index + 1;
+        });
+
+        // --- Event Listener for the file input ---
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                editor.value = e.target.result;
+                // Update the preview once the file is loaded
+                updatePreview(); 
+            };
+            reader.onerror = (e) => {
+                console.error("Error reading file:", e);
+                showToast('Error reading file.');
+            };
+            reader.readAsText(file);
+        });
+
+        // --- Utility function to show a temporary message ---
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.position = 'fixed';
+            toast.style.bottom = '20px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.backgroundColor = '#2f3136';
+            toast.style.color = '#fff';
+            toast.style.padding = '10px 20px';
+            toast.style.borderRadius = '5px';
+            toast.style.zIndex = '1000';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.5s ease';
+
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '1';
+            }, 10);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 500);
+            }, 3000);
+        }
+
+        // Initial preview update on page load
+        updatePreview();
+    </script>
+
+</body>
+</html>

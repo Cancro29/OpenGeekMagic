@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Station Settings</title>
+
+    <!-- Local CSS Libraries -->
+    <link href="styles.css" rel="stylesheet">
+    <link rel="stylesheet" href="/phosphor_icons.css">
+
+    <!-- Local JavaScript Library -->
+    <script src="/vanilla-tilt.js"></script>
+
+    <style>
+        /* --- Local Font Definitions --- */
+        /* inter-300 - latin */
+        @font-face {
+          font-display: swap;
+          font-family: 'Inter';
+          font-style: normal;
+          font-weight: 300;
+          src: url('/inter-300.woff2') format('woff2');
+        }
+        /* inter-regular - latin */
+        @font-face {
+          font-display: swap;
+          font-family: 'Inter';
+          font-style: normal;
+          font-weight: 400;
+          src: url('/inter-regular.woff2') format('woff2');
+        }
+        /* inter-500 - latin */
+        @font-face {
+          font-display: swap;
+          font-family: 'Inter';
+          font-style: normal;
+          font-weight: 500;
+          src: url('/inter-500.woff2') format('woff2');
+        }
+        /* inter-600 - latin */
+        @font-face {
+          font-display: swap;
+          font-family: 'Inter';
+          font-style: normal;
+          font-weight: 600;
+          src: url('/inter-600.woff2') format('woff2');
+        }
+        /* inter-700 - latin */
+        @font-face {
+          font-display: swap;
+          font-family: 'Inter';
+          font-style: normal;
+          font-weight: 700;
+          src: url('/inter-700.woff2') format('woff2');
+        }
+
+        /* --- Custom Page Styles --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-image: url('theme.jpg'), linear-gradient(170deg, #87CEEB 0%, #1E90FF 100%);
+            background-size: cover, auto;
+            background-position: center, center;
+            background-repeat: no-repeat, no-repeat;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mobile-container {
+            max-width: 640px;
+            width: 100%;
+            min-height: 700px;
+            max-height: 90vh;
+            margin: 5vh auto;
+            background-color: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-panel {
+            position: relative;
+            background: rgba(30, 30, 40, 0.75);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-radius: 1.25rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transform-style: preserve-3d;
+            transform: perspective(1000px);
+        }
+
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 1.25rem;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.1));
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px; outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 20px; height: 20px;
+            background: #ffffff; cursor: pointer;
+            border-radius: 50%; border: 2px solid #a78bfa;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px; height: 20px;
+            background: #ffffff; cursor: pointer;
+            border-radius: 50%; border: 2px solid #a78bfa;
+        }
+
+        .custom-checkbox:checked {
+            background-color: #8b5cf6;
+            border-color: #8b5cf6;
+        }
+        .custom-checkbox:checked::after {
+            content: '✔'; color: white;
+            font-size: 12px; line-height: 1.2;
+            text-align: center; display: block;
+        }
+        .filename {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+
+        #status-indicator {
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        /* --- New Navigation Styles --- */
+        .nav-divider {
+            height: 1px;
+            width: 90%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+            margin: 4px 0;
+        }
+
+        .nav-button.active {
+            background-color: rgba(139, 92, 246, 0.25); /* Tailwind's violet-500 with opacity */
+            border-radius: 0.5rem;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Container -->
+    <div class="mobile-container">
+
+        <!-- Status Indicator -->
+        <div id="status-indicator" class="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full opacity-0">
+            Saved!
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow p-6 overflow-y-auto no-scrollbar">
+
+            <!-- Dashboard Settings Menu (New) -->
+            <div id="dashboard-menu" class="space-y-6 menu-content">
+                <h1 class="text-white text-3xl font-bold">Dashboard</h1>
+                <p class="text-gray-300 pb-4">Main dashboard overview.</p>
+                <div class="glass-panel p-4">
+                    <p class="text-gray-200">Dashboard content will go here.</p>
+                </div>
+            </div>
+
+            <!-- Weather Settings Menu -->
+            <div id="weather-menu" class="hidden space-y-6 menu-content">
+                <h1 class="text-white text-3xl font-bold">Weather</h1>
+                <p class="text-gray-300 pb-4">Configure your weather display.</p>
+
+                <!-- Weather Provider Selection -->
+                <div class="glass-panel p-4">
+                    <label for="weather-provider" class="block text-sm font-medium text-gray-200">Weather Provider</label>
+                    <select id="weather-provider" name="Weather_Provider" class="setting-input mt-2 w-full bg-transparent text-white border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none py-2">
+                        <option class="bg-gray-800" value="OpenWeatherMap">OpenWeatherMap</option>
+                        <option class="bg-gray-800" value="Open-Meteo">Open-Meteo</option>
+                    </select>
+                </div>
+
+                <!-- OpenWeatherMap Settings -->
+                <div id="open-weather-map-settings" class="space-y-6">
+                    <div class="glass-panel p-4">
+                        <label for="city" class="block text-sm font-medium text-gray-200">City</label>
+                        <input type="text" id="city" name="City" placeholder="e.g., New York" class="setting-input mt-2 w-full bg-transparent text-white placeholder-gray-300 border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none transition duration-300 py-2">
+                    </div>
+                    <div class="glass-panel p-4">
+                        <label for="country-code" class="block text-sm font-medium text-gray-200">Country Code</label>
+                        <input type="text" id="country-code" name="CountryCode" placeholder="e.g., US" class="setting-input mt-2 w-full bg-transparent text-white placeholder-gray-300 border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none transition duration-300 py-2">
+                    </div>
+                    <div class="glass-panel p-4">
+                        <label for="api-key" class="block text-sm font-medium text-gray-200">API Key</label>
+                        <input type="password" id="api-key" name="API_Key" placeholder="Enter your OpenWeather API key" class="setting-input mt-2 w-full bg-transparent text-white placeholder-gray-300 border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none transition duration-300 py-2">
+                    </div>
+                </div>
+
+                <!-- Open-Meteo Settings -->
+                <div id="open-meteo-settings" class="hidden space-y-6">
+                    <div class="glass-panel p-4">
+                        <label for="latitude" class="block text-sm font-medium text-gray-200">Latitude</label>
+                        <input type="text" id="latitude" name="Latitude" placeholder="e.g., 40.7128" class="setting-input mt-2 w-full bg-transparent text-white placeholder-gray-300 border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none transition duration-300 py-2">
+                    </div>
+                    <div class="glass-panel p-4">
+                        <label for="longitude" class="block text-sm font-medium text-gray-200">Longitude</label>
+                        <input type="text" id="longitude" name="Longitude" placeholder="e.g., -74.0060" class="setting-input mt-2 w-full bg-transparent text-white placeholder-gray-300 border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none transition duration-300 py-2">
+                    </div>
+                </div>
+
+                <!-- Unit & Data Selection (Common to both) -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="glass-panel p-4">
+                        <label for="unit" class="block text-sm font-medium text-gray-200">Unit</label>
+                        <select id="unit" name="unit" class="setting-input mt-2 w-full bg-transparent text-white border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none py-2">
+                            <option class="bg-gray-800" value="metric">Celsius</option>
+                            <option class="bg-gray-800" value="imperial">Fahrenheit</option>
+                        </select>
+                    </div>
+                     <div class="glass-panel p-4">
+                        <label class="block text-sm font-medium text-gray-200">Data</label>
+                        <div class="mt-2 space-y-2">
+                             <div class="flex items-center">
+                                <input id="temp-check" name="showTemp" type="checkbox" class="setting-input h-5 w-5 rounded bg-transparent border-2 border-gray-400 custom-checkbox appearance-none" checked>
+                                <label for="temp-check" class="ml-3 text-sm text-gray-200">Temperature</label>
+                            </div>
+                             <div class="flex items-center">
+                                <input id="humid-check" name="showHumidity" type="checkbox" class="setting-input h-5 w-5 rounded bg-transparent border-2 border-gray-400 custom-checkbox appearance-none" checked>
+                                <label for="humid-check" class="ml-3 text-sm text-gray-200">Humidity</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Photo Frame Settings Menu -->
+            <div id="photo-menu" class="hidden space-y-6 menu-content">
+                <h1 class="text-white text-3xl font-bold">Photo Frame</h1>
+                <p class="text-gray-300 pb-4">Customize your digital photo frame.</p>
+
+                <div class="glass-panel p-4">
+                    <label class="block text-sm font-medium text-gray-200 mb-2">Upload Photo</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="file" id="photo-upload" class="hidden">
+                        <label for="photo-upload" class="flex-grow text-center cursor-pointer rounded-lg border border-gray-500 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 transition">
+                            <span class="filename">Select File</span>
+                        </label>
+                        <button class="flex-shrink-0 rounded-lg bg-violet-500 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-600 transition">Upload</button>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-4">
+                    <label for="slideshow-duration" class="block text-sm font-medium text-gray-200">Slide Show Duration (<span id="duration-value">10</span>s)</label>
+                    <input type="range" id="slideshow-duration" name="slideDuration" min="3" max="60" value="10" class="setting-input mt-4 w-full">
+                </div>
+            </div>
+
+            <!-- Animation Settings Menu -->
+            <div id="animation-menu" class="hidden space-y-6 menu-content">
+                <h1 class="text-white text-3xl font-bold">Animation</h1>
+                 <p class="text-gray-300 pb-4">Display animated GIF files.</p>
+                <div class="glass-panel p-4">
+                    <label class="block text-sm font-medium text-gray-200 mb-2">Upload GIF</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="file" id="animation-upload" accept=".gif" class="hidden">
+                        <label for="animation-upload" class="flex-grow text-center cursor-pointer rounded-lg border border-gray-500 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 transition">
+                            <span class="filename">Select File</span>
+                        </label>
+                        <button class="flex-shrink-0 rounded-lg bg-violet-500 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-600 transition">Upload</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pixel Art Settings Menu -->
+            <div id="pixel-art-menu" class="hidden space-y-6 menu-content">
+                <h1 class="text-white text-3xl font-bold">Pixel Art</h1>
+                <p class="text-gray-300 pb-4">Showcase your pixel art GIFs.</p>
+                <div class="glass-panel p-4">
+                    <label class="block text-sm font-medium text-gray-200 mb-2">Upload GIF</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="file" id="pixel-art-upload" accept=".gif" class="hidden">
+                        <label for="pixel-art-upload" class="flex-grow text-center cursor-pointer rounded-lg border border-gray-500 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 transition">
+                            <span class="filename">Select File</span>
+                        </label>
+                        <button class="flex-shrink-0 rounded-lg bg-violet-500 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-600 transition">Upload</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Manager Menu (New) -->
+            <div id="file-manager-menu" class="hidden space-y-6 menu-content">
+                <h1 class="text-white text-3xl font-bold">File Manager</h1>
+                <p class="text-gray-300 pb-4">Browse and manage files on the device.</p>
+                 <div class="glass-panel p-4">
+                    <p class="text-gray-200">File manager content will go here.</p>
+                </div>
+            </div>
+            
+            <!-- System Settings Menu -->
+            <div id="system-menu" class="hidden space-y-6 menu-content">
+                <h1 class="text-white text-3xl font-bold">System</h1>
+                <p class="text-gray-300 pb-4">Manage system settings and updates.</p>
+                
+                <div class="glass-panel p-4 space-y-4">
+                    <h2 class="text-xl font-semibold text-white">Network Settings</h2>
+                    <div>
+                        <label for="internet-ssid" class="block text-sm font-medium text-gray-200">Internet SSID</label>
+                        <input type="text" id="internet-ssid" name="Internet_SSID" class="setting-input mt-2 w-full bg-transparent text-white placeholder-gray-300 border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none transition duration-300 py-2">
+                    </div>
+                     <div>
+                        <label for="internet-password" class="block text-sm font-medium text-gray-200">Internet Password</label>
+                        <input type="password" id="internet-password" name="Internet_Password" class="setting-input mt-2 w-full bg-transparent text-white placeholder-gray-300 border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none transition duration-300 py-2">
+                    </div>
+                </div>
+
+                <div class="glass-panel p-4 space-y-4">
+                    <h2 class="text-xl font-semibold text-white">Access Point Settings</h2>
+                    <div>
+                        <label for="ap-ssid" class="block text-sm font-medium text-gray-200">AP SSID</label>
+                        <input type="text" id="ap-ssid" name="AP_SSID" class="setting-input mt-2 w-full bg-transparent text-white placeholder-gray-300 border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none transition duration-300 py-2">
+                    </div>
+                     <div>
+                        <label for="ap-password" class="block text-sm font-medium text-gray-200">AP Password</label>
+                        <input type="password" id="ap-password" name="AP_Password" class="setting-input mt-2 w-full bg-transparent text-white placeholder-gray-300 border-b-2 border-gray-400 focus:border-purple-400 focus:outline-none transition duration-300 py-2">
+                    </div>
+                </div>
+
+                <div class="glass-panel p-4">
+                    <label class="block text-sm font-medium text-gray-200 mb-2">Firmware Update</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="file" id="firmware-upload" class="hidden">
+                        <label for="firmware-upload" class="flex-grow text-center cursor-pointer rounded-lg border border-gray-500 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 transition">
+                            <span class="filename">Select File</span>
+                        </label>
+                        <button class="flex-shrink-0 rounded-lg bg-violet-500 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-600 transition">Upload</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="w-full bg-black/20 backdrop-blur-lg border-t border-white/20">
+            <div class="flex flex-col items-center py-2">
+                <!-- Row 1 -->
+                <div class="flex justify-around w-full">
+                    <button data-target="dashboard-menu" class="nav-button flex flex-col items-center justify-center w-1/4 p-2 transition-colors duration-300">
+                        <i class="ph-gauge text-3xl"></i>
+                        <span class="text-sm mt-1">Dashboard</span>
+                    </button>
+                    <button data-target="weather-menu" class="nav-button flex flex-col items-center justify-center w-1/4 p-2 transition-colors duration-300">
+                        <i class="ph-cloud-sun text-3xl"></i>
+                        <span class="text-sm mt-1">Weather</span>
+                    </button>
+                    <button data-target="photo-menu" class="nav-button flex flex-col items-center justify-center w-1/4 p-2 transition-colors duration-300">
+                        <i class="ph-image text-3xl"></i>
+                        <span class="text-sm mt-1">Photo</span>
+                    </button>
+                    <button data-target="animation-menu" class="nav-button flex flex-col items-center justify-center w-1/4 p-2 transition-colors duration-300">
+                        <i class="ph-film-strip text-3xl"></i>
+                        <span class="text-sm mt-1">Animation</span>
+                    </button>
+                </div>
+                <!-- Divider -->
+                <div class="nav-divider"></div>
+                <!-- Row 2 -->
+                <div class="flex justify-around w-full">
+                    <button data-target="pixel-art-menu" class="nav-button flex flex-col items-center justify-center w-1/4 p-2 transition-colors duration-300">
+                        <i class="ph-squares-four text-3xl"></i>
+                        <span class="text-sm mt-1">Pixel Art</span>
+                    </button>
+                    <button data-target="file-manager-menu" class="nav-button flex flex-col items-center justify-center w-1/4 p-2 transition-colors duration-300">
+                        <i class="ph-folder text-3xl"></i>
+                        <span class="text-sm mt-1">File Manager</span>
+                    </button>
+                    <button data-target="system-menu" class="nav-button flex flex-col items-center justify-center w-1/4 p-2 transition-colors duration-300">
+                        <i class="ph-gear text-3xl"></i>
+                        <span class="text-sm mt-1">System</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const navButtons = document.querySelectorAll('.nav-button');
+            const menuContents = document.querySelectorAll('.menu-content');
+            const durationSlider = document.getElementById('slideshow-duration');
+            const durationValue = document.getElementById('duration-value');
+            const statusIndicator = document.getElementById('status-indicator');
+            const weatherProviderSelect = document.getElementById('weather-provider');
+            const owmSettings = document.getElementById('open-weather-map-settings');
+            const meteoSettings = document.getElementById('open-meteo-settings');
+
+            let statusTimeout;
+
+            // --- Automatic Settings Submission ---
+
+            function debounce(func, delay) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), delay);
+                };
+            }
+
+            function showStatus() {
+                clearTimeout(statusTimeout);
+                statusIndicator.classList.remove('opacity-0');
+                statusTimeout = setTimeout(() => {
+                    statusIndicator.classList.add('opacity-0');
+                }, 1500);
+            }
+
+            async function submitSettings() {
+                const settingsData = new URLSearchParams();
+                const inputs = document.querySelectorAll('.setting-input');
+                
+                inputs.forEach(input => {
+                    // Only include inputs from visible sections
+                    if (input.offsetParent !== null) {
+                        if (input.type === 'checkbox') {
+                            settingsData.append(input.name, input.checked);
+                        } else {
+                            if(input.value) {
+                                settingsData.append(input.name, input.value);
+                            }
+                        }
+                    }
+                });
+
+                if (Array.from(settingsData).length === 0) {
+                    return;
+                }
+                
+                const url = 'http://192.168.1.1/?' + settingsData.toString();
+                console.log('Submitting settings to:', url);
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                    });
+
+                    if (response.ok) {
+                        console.log('Settings saved successfully.');
+                        showStatus();
+                    } else {
+                        console.error('Failed to save settings:', response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Error submitting settings:', error);
+                }
+            }
+
+            const debouncedSubmit = debounce(submitSettings, 500);
+
+            document.querySelectorAll('.setting-input').forEach(input => {
+                if (input.type === 'range') {
+                    input.addEventListener('input', debouncedSubmit);
+                } else {
+                    input.addEventListener('change', submitSettings);
+                }
+            });
+
+            // --- UI Management Functions ---
+
+            // Handle weather provider selection change
+            function updateWeatherForms(provider) {
+                 if (provider === 'OpenWeatherMap') {
+                    owmSettings.classList.remove('hidden');
+                    meteoSettings.classList.add('hidden');
+                } else { // Assumes Open-Meteo
+                    owmSettings.classList.add('hidden');
+                    meteoSettings.classList.remove('hidden');
+                }
+            }
+
+            weatherProviderSelect.addEventListener('change', (event) => {
+                updateWeatherForms(event.target.value);
+            });
+
+            function switchMenu(targetId) {
+                menuContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+
+                const targetMenu = document.getElementById(targetId);
+                if (targetMenu) {
+                    targetMenu.classList.remove('hidden');
+                }
+
+                navButtons.forEach(button => {
+                    button.classList.remove('active', 'text-violet-400');
+                    button.classList.add('text-gray-300');
+                    
+                    if (button.dataset.target === targetId) {
+                        button.classList.add('active', 'text-violet-400');
+                        button.classList.remove('text-gray-300');
+                    }
+                });
+            }
+
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    switchMenu(button.dataset.target);
+                });
+            });
+
+            if (durationSlider && durationValue) {
+                durationSlider.addEventListener('input', (event) => {
+                    durationValue.textContent = event.target.value;
+                });
+            }
+
+            document.querySelectorAll('input[type="file"]').forEach(fileInput => {
+                const label = document.querySelector(`label[for="${fileInput.id}"]`);
+                if (label) {
+                    const span = label.querySelector('.filename');
+                    if (span) {
+                        const originalText = span.textContent;
+                        fileInput.addEventListener('change', () => {
+                            if (fileInput.files.length > 0) {
+                                span.textContent = fileInput.files[0].name;
+                            } else {
+                                span.textContent = originalText;
+                            }
+                        });
+                    }
+                }
+            });
+            
+            // --- Load Configuration on Page Start ---
+            async function loadConfig() {
+                try {
+                    const response = await fetch('/config.json');
+                    if (!response.ok) {
+                        console.error('Could not load config.json');
+                        return;
+                    }
+                    const config = await response.json();
+                    
+                    // Populate forms with config data
+                    document.getElementById('weather-provider').value = config.Weather_Provider || 'OpenWeatherMap';
+                    document.getElementById('city').value = config.City || '';
+                    document.getElementById('country-code').value = config.CountryCode || '';
+                    document.getElementById('api-key').value = config.API_Key || '';
+                    document.getElementById('latitude').value = config.Latitude || '';
+                    document.getElementById('longitude').value = config.Longitude || '';
+                    
+                    document.getElementById('internet-ssid').value = config.Internet_SSID || '';
+                    document.getElementById('internet-password').value = config.Internet_Password || '';
+                    document.getElementById('ap-ssid').value = config.AP_SSID || '';
+                    document.getElementById('ap-password').value = config.AP_Password || '';
+
+                    // Update the weather form visibility based on loaded config
+                    updateWeatherForms(config.Weather_Provider);
+
+                } catch (error) {
+                    console.error('Error fetching or parsing config.json:', error);
+                }
+            }
+
+            VanillaTilt.init(document.querySelectorAll(".glass-panel"), {
+                max: 10,
+                speed: 400,
+                glare: true,
+                "max-glare": 0.3
+            });
+
+            // Set the initial state and load config
+            switchMenu('dashboard-menu');
+            loadConfig();
+        });
+    </script>
+
+</body>
+</html>
