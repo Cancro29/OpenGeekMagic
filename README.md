@@ -2,7 +2,7 @@
 A Weather Dashboard project based on GeekMagic SmallTV running on ESP8266
 
 ## Features:
-- Open-Meteo and OpenWeatherMap weather provider
+- Supports Open-Meteo and OpenWeatherMap weather provider
 - Customizable icons
 - Dashboard Manager
 - Uses Tailwind CSS. Any changes related to Dashboard HTML must be recompiled using Tailwind
